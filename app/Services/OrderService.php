@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendOrderConfirmationJob;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
@@ -15,7 +16,7 @@ class OrderService
      */
     public function create(array $payload): Order
     {
-        return DB::transaction(function () use ($payload) {
+        $order = DB::transaction(function () use ($payload) {
             $customer = Customer::firstOrCreate(
                 ['email' => $payload['customer']['email']],
                 ['name' => $payload['customer']['name']],
@@ -94,5 +95,9 @@ class OrderService
 
             return $order->load(['customer', 'items']);
         });
+
+        SendOrderConfirmationJob::dispatch($order->id);
+
+        return $order;
     }
 }

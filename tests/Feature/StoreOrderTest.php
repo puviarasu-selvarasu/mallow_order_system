@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendOrderConfirmationJob;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class StoreOrderTest extends TestCase
@@ -28,6 +30,8 @@ class StoreOrderTest extends TestCase
             'tax_percentage' => 5,
             'stock_quantity' => 55,
         ]);
+
+        Queue::fake();
 
         $payload = [
             'customer' => [
@@ -85,6 +89,10 @@ class StoreOrderTest extends TestCase
 
         $this->assertSame(65, $productA->fresh()->stock_quantity);
         $this->assertSame(52, $productB->fresh()->stock_quantity);
+
+        Queue::assertPushed(SendOrderConfirmationJob::class, function (SendOrderConfirmationJob $job) use ($order) {
+            return $job->orderId === $order->id;
+        });
     }
 
     public function test_insufficient_stock_rolls_back_the_entire_order_including_the_new_customer(): void
@@ -92,6 +100,8 @@ class StoreOrderTest extends TestCase
         $product = Product::factory()->create([
             'stock_quantity' => 5,
         ]);
+
+        Queue::fake();
 
         $email = 'new-customer@example.com';
 
@@ -116,6 +126,7 @@ class StoreOrderTest extends TestCase
             'email' => $email,
         ]);
         $this->assertSame(5, $product->fresh()->stock_quantity);
+        Queue::assertNothingPushed();
     }
 
     public function test_quantity_must_be_at_least_one(): void
