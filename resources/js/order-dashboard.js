@@ -3,6 +3,7 @@ export default function orderDashboard() {
         products: [],
         lowStockProducts: [],
         lowStockThreshold: null,
+        lowStockError: '',
 
         customer: {
             name: '',
@@ -55,6 +56,7 @@ export default function orderDashboard() {
         },
 
         async loadLowStock() {
+            this.lowStockError = '';
             this.loadingLowStock = true;
 
             try {
@@ -68,7 +70,7 @@ export default function orderDashboard() {
                 this.lowStockThreshold = data.threshold;
                 this.lowStockProducts = data.products;
             } catch (error) {
-                console.error(error);
+                this.lowStockError = error.message;
             } finally {
                 this.loadingLowStock = false;
             }

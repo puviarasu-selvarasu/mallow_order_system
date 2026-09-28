@@ -183,4 +183,26 @@ class StoreOrderTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
         $this->assertSame(10, $product->fresh()->stock_quantity);
     }
+    public function test_customer_name_cannot_exceed_255_characters(): void
+    {
+        $product = Product::factory()->create([
+            'stock_quantity' => 10,
+        ]);
+
+        $response = $this->postJson('/api/orders', [
+            'customer' => [
+                'name' => str_repeat('A', 256),
+                'email' => 'customer@example.com',
+            ],
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['customer.name']);
+    }
 }

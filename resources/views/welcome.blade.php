@@ -199,7 +199,13 @@
                     Loading inventory...
                 </p>
 
-                <template x-if="!loadingLowStock && lowStockProducts.length === 0">
+                <p
+                    class="message error"
+                    x-show="lowStockError"
+                    x-text="lowStockError"
+                ></p>
+
+                <template x-if="!loadingLowStock && !lowStockError && lowStockProducts.length === 0" >
                     <p>No products are currently below the threshold.</p>
                 </template>
 
